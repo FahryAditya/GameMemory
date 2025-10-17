@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Card Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #2c3e50, #4ca1af);
+      color: #fff;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      grid-gap: 15px;
+      perspective: 1000px;
+    }
+
+    .card {
+      width: 100px;
+      height: 100px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      cursor: pointer;
+    }
+
+    .card.flip {
+      transform: rotateY(180deg);
+    }
+
+    .card .front,
+    .card .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      backface-visibility: hidden;
+    }
+
+    .card .front {
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: #2c3e50;
+      transform: rotateY(180deg);
+    }
+
+    .card .back {
+      background: #34495e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #1abc9c;
+      color: #fff;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #16a085;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Memory Card Game</h1>
+  <div class="stats">
+    <div id="moves">Langkah: 0</div>
+    <div id="timer">Waktu: 0 dtk</div>
+  </div>
+  <div class="game-board" id="board"></div>
+  <button id="restart">Mulai Ulang 🔁</button>
+
+  <script>
+    const icons = ['🍎', '🍌', '🍇', '🍓', '🍒', '🍍', '🥝', '🍉'];
+    let cards = [...icons, ...icons];
+    let firstCard, secondCard;
+    let lock = false;
+    let moves = 0;
+    let time = 0;
+    let timerInterval;
+
+    const board = document.getElementById('board');
+    const movesDisplay = document.getElementById('moves');
+    const timerDisplay = document.getElementById('timer');
+    const restartBtn = document.getElementById('restart');
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function startGame() {
+      board.innerHTML = '';
+      cards = shuffle(cards);
+      moves = 0;
+      time = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        time++;
+        timerDisplay.textContent = `Waktu: ${time} dtk`;
+      }, 1000);
+      movesDisplay.textContent = 'Langkah: 0';
+
+      cards.forEach(icon => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.innerHTML = `
+          <div class="front">${icon}</div>
+          <div class="back">❓</div>
+        `;
+        card.addEventListener('click', flipCard);
+        board.appendChild(card);
+      });
+    }
+
+    function flipCard() {
+      if (lock) return;
+      if (this === firstCard) return;
+      this.classList.add('flip');
+
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+      secondCard = this;
+      moves++;
+      movesDisplay.textContent = `Langkah: ${moves}`;
+      checkMatch();
+    }
+
+    function checkMatch() {
+      const match =
+        firstCard.querySelector('.front').textContent ===
+        secondCard.querySelector('.front').textContent;
+      if (match) {
+        disableCards();
+      } else {
+        unflipCards();
+      }
+    }
+
+    function disableCards() {
+      firstCard.removeEventListener('click', flipCard);
+      secondCard.removeEventListener('click', flipCard);
+      resetTurn();
+      checkWin();
+    }
+
+    function unflipCards() {
+      lock = true;
+      setTimeout(() => {
+        firstCard.classList.remove('flip');
+        secondCard.classList.remove('flip');
+        resetTurn();
+      }, 800);
+    }
+
+    function resetTurn() {
+      [firstCard, secondCard, lock] = [null, null, false];
+    }
+
+    function checkWin() {
+      const flippedCards = document.querySelectorAll('.flip').length;
+      if (flippedCards === cards.length) {
+        clearInterval(timerInterval);
+        setTimeout(() => {
+          alert(`🎉 Kamu menang!\nLangkah: ${moves}\nWaktu: ${time} detik`);
+        }, 400);
+      }
+    }
+
+    restartBtn.addEventListener('click', startGame);
+    startGame();
+  </script>
+</body>
+</html>
